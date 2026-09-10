@@ -4,3 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.104"
+bollard = "0.21.1"
+clap = { version = "4.6.6", features = ["derive"] }
+futures-util = "0.3.34"
+tokio = { version = "1.53.1", features = ["full"] }
