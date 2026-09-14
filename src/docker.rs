@@ -58,6 +58,16 @@ pub async fn stop_container(containers: &[String]) -> anyhow::Result<()> {
     anyhow::Ok(())
 }
 
+pub async fn stop_all_containers() -> anyhow::Result<()> {
+    let containers = get_container_list(false).await?;
+    let ids: Vec<String> = containers
+        .into_iter()
+        .filter_map(|container| container.id)
+        .collect();
+
+    stop_container(&ids).await
+}
+
 pub async fn log(follow: bool, container: &str) -> anyhow::Result<()> {
     let docker = connect_docker().await?;
     let options = LogsOptionsBuilder::default()

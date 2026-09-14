@@ -6,7 +6,7 @@ use clap::Parser;
 
 use crate::{
     cli::{Cli, Command},
-    docker::{get_container_list, get_images, log, stop_container},
+    docker::{get_container_list, get_images, log, stop_all_containers, stop_container},
     output::{print_containers, print_images},
 };
 
@@ -23,7 +23,13 @@ async fn main() -> anyhow::Result<()> {
             let images = get_images().await?;
             print_images(images).await;
         }
-        Command::Stop { containers } => stop_container(containers).await?,
+        Command::Stop { all, containers } => {
+            if *all {
+                stop_all_containers().await?
+            } else {
+                stop_container(containers).await?
+            }
+        }
         Command::Logs { follow, container } => log(*follow, container).await?,
     }
 

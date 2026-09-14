@@ -15,7 +15,10 @@ pub enum Command {
     },
     Images,
     Stop {
-        #[arg(required = true)]
+        #[arg(short, long, conflicts_with = "containers")]
+        all: bool,
+
+        #[arg(required_unless_present = "all")]
         containers: Vec<String>,
     },
     Logs {
