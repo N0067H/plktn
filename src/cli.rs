@@ -28,4 +28,16 @@ pub enum Command {
         #[arg(required = true)]
         container: String,
     },
+    Start {
+        #[arg(required = true)]
+        containers: Vec<String>,
+    },
+    Restart {
+        #[arg(required = true)]
+        containers: Vec<String>,
+    },
+    Rm {
+        #[arg(required = true)]
+        containers: Vec<String>,
+    },
 }

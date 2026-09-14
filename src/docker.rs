@@ -4,7 +4,8 @@ use bollard::{
     plugin::{ContainerSummary, ImageSummary},
     query_parameters::{
         ListContainersOptionsBuilder, ListImagesOptionsBuilder, LogsOptionsBuilder,
-        StopContainerOptionsBuilder,
+        RemoveContainerOptionsBuilder, RestartContainerOptionsBuilder,
+        StartContainerOptionsBuilder, StopContainerOptionsBuilder,
     },
 };
 use futures_util::{StreamExt, future::join_all};
@@ -82,6 +83,87 @@ pub async fn log(follow: bool, container: &str) -> anyhow::Result<()> {
         match log {
             Ok(output) => print!("{output}"),
             Err(err) => eprintln!("{container} failed to read logs: {err}"),
+        }
+    }
+
+    anyhow::Ok(())
+}
+
+pub async fn start(containers: &[String]) -> anyhow::Result<()> {
+    let docker = connect_docker().await?;
+    let options = StartContainerOptionsBuilder::default().build();
+
+    let tasks = containers.iter().map(|container| {
+        let docker = docker.clone();
+        let options = options.clone();
+        let container = container.clone();
+
+        async move {
+            let result = docker.start_container(&container, Some(options)).await;
+            (container, result)
+        }
+    });
+
+    let results = join_all(tasks).await;
+
+    for (container, result) in results {
+        match result {
+            Ok(_) => println!("{container}: started"),
+            Err(err) => println!("{container}: failed: {err}"),
+        }
+    }
+
+    anyhow::Ok(())
+}
+
+pub async fn restart(containers: &[String]) -> anyhow::Result<()> {
+    let docker = connect_docker().await?;
+    let options = RestartContainerOptionsBuilder::default().build();
+
+    let tasks = containers.iter().map(|container| {
+        let docker = docker.clone();
+        let options = options.clone();
+        let container = container.clone();
+
+        async move {
+            let result = docker.restart_container(&container, Some(options)).await;
+            (container, result)
+        }
+    });
+
+    let results = join_all(tasks).await;
+
+    for (container, result) in results {
+        match result {
+            Ok(_) => println!("{container}: restarted"),
+            Err(err) => println!("{container}: failed: {err}"),
+        }
+    }
+
+    anyhow::Ok(())
+}
+
+pub async fn rm(containers: &[String]) -> anyhow::Result<()> {
+    let docker = connect_docker().await?;
+    let options = RemoveContainerOptionsBuilder::default().build();
+
+    let tasks = containers.iter().map(|container| {
+        let docker = docker.clone();
+        let options = options.clone();
+        let container = container.clone();
+
+        async move {
+            let result = docker.remove_container(&container, Some(options)).await;
+            (container, result)
+        }
+    });
+
+    let results = join_all(tasks).await;
+
+    for (container, result) in results {
+        match result {
+            Ok(_) => println!("{container}: removed"),
+            Err(err) => println!("{container}: failed: {err}"),
         }
     }
 
