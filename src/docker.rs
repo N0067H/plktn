@@ -70,6 +70,10 @@ pub async fn stop_all_containers() -> anyhow::Result<()> {
 }
 
 pub async fn log(follow: bool, container: &str) -> anyhow::Result<()> {
+    log_stream(follow, container, None).await
+}
+
+async fn log_stream(follow: bool, container: &str, prefix: Option<&str>) -> anyhow::Result<()> {
     let docker = connect_docker().await?;
     let options = LogsOptionsBuilder::default()
         .stdout(true)
@@ -81,11 +85,42 @@ pub async fn log(follow: bool, container: &str) -> anyhow::Result<()> {
 
     while let Some(log) = logs.next().await {
         match log {
-            Ok(output) => print!("{output}"),
-            Err(err) => eprintln!("{container} failed to read logs: {err}"),
+            Ok(output) => match prefix {
+                Some(prefix) => {
+                    for line in output.to_string().lines() {
+                        println!("{prefix} | {line}");
+                    }
+                }
+                None => print!("{output}"),
+            },
+            Err(err) => {
+                let label = prefix.unwrap_or(container);
+                eprintln!("{label}: failed to read logs: {err}");
+            }
         }
     }
 
+    anyhow::Ok(())
+}
+
+pub async fn log_all(follow: bool) -> anyhow::Result<()> {
+    let containers = get_container_list(false).await?;
+    let ids: Vec<String> = containers
+        .into_iter()
+        .filter_map(|container| container.id)
+        .collect();
+
+    let tasks = ids.iter().map(|id| {
+        let id = id.clone();
+
+        async move {
+            if let Err(err) = log_stream(follow, &id, Some(&id)).await {
+                eprintln!("{id}: failed: {err}");
+            }
+        }
+    });
+
+    join_all(tasks).await;
     anyhow::Ok(())
 }
 

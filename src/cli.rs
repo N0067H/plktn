@@ -22,11 +22,14 @@ pub enum Command {
         containers: Vec<String>,
     },
     Logs {
+        #[arg(short, long, conflicts_with = "container")]
+        all: bool,
+
         #[arg(short, long)]
         follow: bool,
 
-        #[arg(required = true)]
-        container: String,
+        #[arg(required_unless_present = "all")]
+        container: Option<String>,
     },
     Start {
         #[arg(required = true)]
