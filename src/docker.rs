@@ -9,8 +9,6 @@ use bollard::{
 };
 use futures_util::{StreamExt, future::join_all};
 
-use crate::output::short_id;
-
 pub async fn connect_docker() -> anyhow::Result<Docker> {
     let docker = Docker::connect_with_local_defaults().context("failed to create Docker client")?;
     docker.ping().await.context("failed to connect to Docker daemon; check whether Docker is running and the socket is accessible")?;
